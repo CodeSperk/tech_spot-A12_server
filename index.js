@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -42,7 +42,7 @@ async function run() {
     })
 
     // Users related API
-    app.post("/users", async(req, res) => {
+    app.put("/users", async(req, res) => {
       const user = req.body;
       const query = {email: user.email};
       const isExists = await usersCollection.findOne(query);
@@ -60,6 +60,32 @@ async function run() {
       const isFeatured = true;
       const query = {featured : isFeatured}
       const result = await productCollection.find(query).sort({timestamp: -1}).toArray();
+      res.send(result);
+    });
+
+
+    // to update product vote
+    app.patch("/product/:id", async(req, res) => {
+      const id = req.params.id;
+      const {currentVote, email} = req.body;
+      const query = {_id: new ObjectId(id)};
+
+      // to check if he voted earlier
+      const product = await productCollection.findOne(query);
+      if(product.votedUsers && product.votedUsers.includes(email)){
+        return res.status(400).send({message: "You have already voted for this product"});
+      }
+
+      const options = {upsert: true};
+      const updatedProduct = {
+        $set:{
+          upvote: currentVote
+        },
+        $push:{
+          votedUsers: email
+        }
+      };
+      const result = await productCollection.updateOne(query, updatedProduct, options);
       res.send(result);
     })
 
