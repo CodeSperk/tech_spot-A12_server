@@ -27,8 +27,21 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const usersCollection = client.db("userDB").collection("users");
+    const productCollection = client.db("productDB").collection("products");
 
-    // Users Related API
+    // to check admin
+    app.get('/users/admin/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = {email: email}
+      const user = await usersCollection.findOne(query);
+      let admin = false;
+      if(user){
+        admin = user?.role === "admin";
+      }
+      res.send({admin});
+    })
+
+    // Users related API
     app.post("/users", async(req, res) => {
       const user = req.body;
       const query = {email: user.email};
@@ -40,6 +53,15 @@ async function run() {
       res.send(result);
     })
 
+    // Products related API
+    // ===========================================
+    // Sorted Featured Products
+    app.get("/featured", async(req, res) => {
+      const isFeatured = true;
+      const query = {featured : isFeatured}
+      const result = await productCollection.find(query).sort({timestamp: -1}).toArray();
+      res.send(result);
+    })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
