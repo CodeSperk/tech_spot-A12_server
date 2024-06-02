@@ -63,6 +63,12 @@ async function run() {
       res.send(result);
     });
 
+    // to get trending product
+    app.get("/trending", async(req, res) => {
+      const result = await productCollection.find().sort({upvote: -1}).limit(6).toArray();
+      res.send(result);
+    })
+
 
     // to update product vote
     app.patch("/product/:id", async(req, res) => {
