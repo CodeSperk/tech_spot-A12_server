@@ -57,6 +57,15 @@ async function run() {
 
     // Products related API
     // ===========================================
+
+    // to get all accepted products
+    app.get("/products", async(req, res) => {
+      const status = "accepted";
+      const query = {status: status}
+      const result = await productCollection.find(query).toArray();
+      res.send(result);
+    });
+    
     // Sorted Featured Products
     app.get("/featured", async (req, res) => {
       const isFeatured = true;
