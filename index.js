@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "https://b9a12-final-project.web.app"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
@@ -31,20 +31,33 @@ async function run() {
     const productCollection = client.db("productDB").collection("products");
     const reviewCollection = client.db("productDB").collection("reviews");
 
-    // to check admin
-    app.get("/users/admin/:email", async (req, res) => {
+    // Users related API
+    //=======================
+    // to get user
+    app.get("/user", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        return res.status(400).send({ message: "Email is required" });
+      }
+      const query = {email: email};
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    })
+
+    // to get user Role
+    app.get("/users/role/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      let admin = false;
-      if (user) {
-        admin = user?.role === "admin";
+      if(user){
+        res.send({role: user.role});
+      }else{
+        res.status(404).send({message: "user not found"})
       }
-      res.send({ admin });
     });
 
-    // Users related API
-    app.put("/users", async (req, res) => {
+    // to post user
+    app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
       const isExists = await usersCollection.findOne(query);
@@ -59,13 +72,13 @@ async function run() {
     // ===========================================
 
     // to get all accepted products
-    app.get("/products", async(req, res) => {
+    app.get("/products", async (req, res) => {
       const status = "accepted";
-      const query = {status: status}
+      const query = { status: status };
       const result = await productCollection.find(query).toArray();
       res.send(result);
     });
-    
+
     // Sorted Featured Products
     app.get("/featured", async (req, res) => {
       const isFeatured = true;
@@ -140,7 +153,7 @@ async function run() {
       const query = req.body;
       const result = await reviewCollection.insertOne(query);
       res.send(result);
-    })
+    });
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
