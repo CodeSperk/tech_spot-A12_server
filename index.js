@@ -108,6 +108,18 @@ async function run() {
       res.send(result);
     });
 
+    // to get user wise products
+    app.get("/myProducts", async (req, res) => {
+      const email = req.query.email;
+      const query = {ownerEmail: email};
+      const products = await productCollection.find(query).toArray();
+      if(products){
+        res.send(products)
+      }else{
+        res.status(404).send({message: "You added no products !"})
+      }
+    });
+
     // to add single product
     app.post("/addProduct", async(req, res) => {
       const product = req.body;
@@ -142,6 +154,14 @@ async function run() {
         updatedProduct,
         options
       );
+      res.send(result);
+    });
+
+    // to delete a product 
+    app.delete("/deleteProduct/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await productCollection.deleteOne(query);
       res.send(result);
     });
 
