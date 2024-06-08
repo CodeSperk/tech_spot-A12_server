@@ -127,6 +127,24 @@ async function run() {
       res.send(result);
     })
 
+    // to update existing product
+    app.put("/product/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedProduct = req.body;
+      const query = {_id: new ObjectId(id)}
+      const updateProduct = {
+        $set:{
+          productName: updatedProduct.productName,
+          productImage: updatedProduct.productImage,
+          description: updatedProduct.description,
+          tags: updatedProduct.tags,
+          externalLink: updatedProduct.externalLink,
+        }
+      }
+      const result = await productCollection.updateOne(query, updateProduct);
+      res.send(result);
+    })
+
     // to update product vote
     app.patch("/product/:id", async (req, res) => {
       const id = req.params.id;
