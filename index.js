@@ -108,6 +108,13 @@ async function run() {
       res.send(result);
     });
 
+    // to add single product
+    app.post("/addProduct", async(req, res) => {
+      const product = req.body;
+      const result = await productCollection.insertOne(product);
+      res.send(result);
+    })
+
     // to update product vote
     app.patch("/product/:id", async (req, res) => {
       const id = req.params.id;
