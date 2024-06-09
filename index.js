@@ -71,6 +71,13 @@ async function run() {
     // Products related API
     // ===========================================
 
+    //to get all produts
+    app.get("/allProducts", async (req, res) => {
+      const result = await productCollection.find().toArray();
+      res.send(result);
+    })
+
+
     // to get all accepted products
     app.get("/products", async (req, res) => {
       const status = "accepted";
@@ -142,6 +149,49 @@ async function run() {
         }
       }
       const result = await productCollection.updateOne(query, updateProduct);
+      res.send(result);
+    })
+
+    // to make product as featured
+    app.patch("/featured/:id", async(req, res) => {
+      const id = req.params.id;
+      const query ={_id: new ObjectId(id)};
+      const options = {upsert: true};
+      const makeFeatured = {
+        $set:{
+          featured: true
+        }
+      }
+      const result = await productCollection.updateOne(query, makeFeatured, options);
+      res.send(result);
+    })
+
+    // to accept product
+    app.patch("/accepted/:id", async(req, res) => {
+      const id = req.params.id;
+      const query ={_id: new ObjectId(id)};
+      const options = {upsert: true};
+      const acceptProduct = {
+        $set:{
+          status: "accepted"
+        }
+      }
+      const result = await productCollection.updateOne(query, acceptProduct, options);
+      res.send(result);
+    })
+
+
+    // to reject product
+    app.patch("/rejected/:id", async(req, res) => {
+      const id = req.params.id;
+      const query ={_id: new ObjectId(id)};
+      const options = {upsert: true};
+      const rejectProduct = {
+        $set:{
+          status: "rejected"
+        }
+      }
+      const result = await productCollection.updateOne(query, rejectProduct, options);
       res.send(result);
     })
 
