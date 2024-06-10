@@ -30,34 +30,41 @@ async function run() {
     const usersCollection = client.db("userDB").collection("users");
     const productCollection = client.db("productDB").collection("products");
     const reviewCollection = client.db("productDB").collection("reviews");
+    const couponCollection = client.db("couponDB").collection("coupons");
 
     // Users related API
     //=======================
-    // to get user
+    // to get all users
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    // to specific get user
     app.get("/user", async (req, res) => {
       const email = req.query.email;
       if (!email) {
         return res.status(400).send({ message: "Email is required" });
       }
-      const query = {email: email};
+      const query = { email: email };
       const result = await usersCollection.findOne(query);
       res.send(result);
-    })
+    });
 
     // to get user Role
-    app.get("/users/role/:email", async (req, res) => {
+    app.get("/user/role/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      if(user){
-        res.send({role: user.role});
-      }else{
-        res.status(404).send({message: "user not found"})
+      if (user) {
+        res.send({ role: user.role });
+      } else {
+        res.status(404).send({ message: "user not found" });
       }
     });
 
     // to post user
-    app.post("/users", async (req, res) => {
+    app.post("/user", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
       const isExists = await usersCollection.findOne(query);
@@ -68,6 +75,41 @@ async function run() {
       res.send(result);
     });
 
+    // To make user moderator
+    app.patch("/moderator/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const newUserRole = {
+        $set: {
+          role: "moderator",
+        },
+      };
+      const result = await usersCollection.updateOne(
+        query,
+        newUserRole,
+        options
+      );
+      res.send(result);
+    });
+    // To make user admin
+    app.patch("/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const newUserRole = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await usersCollection.updateOne(
+        query,
+        newUserRole,
+        options
+      );
+      res.send(result);
+    });
+
     // Products related API
     // ===========================================
 
@@ -75,8 +117,7 @@ async function run() {
     app.get("/allProducts", async (req, res) => {
       const result = await productCollection.find().toArray();
       res.send(result);
-    })
-
+    });
 
     // to get all accepted products
     app.get("/products", async (req, res) => {
@@ -98,13 +139,12 @@ async function run() {
     });
 
     // To Load reported Products
-      app.get("/reported", async (req, res) => {
-        const isReported = true;
-        const query = { reported: isReported };
-        const result = await productCollection
-          .find(query).toArray();
-        res.send(result);
-      });
+    app.get("/reported", async (req, res) => {
+      const isReported = true;
+      const query = { reported: isReported };
+      const result = await productCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // to get trending product
     app.get("/trending", async (req, res) => {
@@ -127,96 +167,111 @@ async function run() {
     // to get user wise products
     app.get("/myProducts", async (req, res) => {
       const email = req.query.email;
-      const query = {ownerEmail: email};
+      const query = { ownerEmail: email };
       const products = await productCollection.find(query).toArray();
-      if(products){
-        res.send(products)
-      }else{
-        res.status(404).send({message: "You added no products !"})
+      if (products) {
+        res.send(products);
+      } else {
+        res.status(404).send({ message: "You added no products !" });
       }
     });
 
     // to add single product
-    app.post("/addProduct", async(req, res) => {
+    app.post("/addProduct", async (req, res) => {
       const product = req.body;
       const result = await productCollection.insertOne(product);
       res.send(result);
-    })
+    });
 
     // to update existing product
     app.put("/product/:id", async (req, res) => {
       const id = req.params.id;
       const updatedProduct = req.body;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) };
       const updateProduct = {
-        $set:{
+        $set: {
           productName: updatedProduct.productName,
           productImage: updatedProduct.productImage,
           description: updatedProduct.description,
           tags: updatedProduct.tags,
           externalLink: updatedProduct.externalLink,
-        }
-      }
+        },
+      };
       const result = await productCollection.updateOne(query, updateProduct);
       res.send(result);
-    })
+    });
 
     // to make product as featured
-    app.patch("/featured/:id", async(req, res) => {
+    app.patch("/featured/:id", async (req, res) => {
       const id = req.params.id;
-      const query ={_id: new ObjectId(id)};
-      const options = {upsert: true};
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
       const makeFeatured = {
-        $set:{
-          featured: true
-        }
-      }
-      const result = await productCollection.updateOne(query, makeFeatured, options);
+        $set: {
+          featured: true,
+        },
+      };
+      const result = await productCollection.updateOne(
+        query,
+        makeFeatured,
+        options
+      );
       res.send(result);
-    })
+    });
 
-// to report Product
-        app.patch("/report/:id", async(req, res) => {
-          const id = req.params.id;
-          const query ={_id: new ObjectId(id)};
-          const options = {upsert: true};
-          const makeReported = {
-            $set:{
-              reported: true
-            }
-          }
-          const result = await productCollection.updateOne(query, makeReported, options);
-          res.send(result);
-        })
+    // to report Product
+    app.patch("/report/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const makeReported = {
+        $set: {
+          reported: true,
+        },
+      };
+      const result = await productCollection.updateOne(
+        query,
+        makeReported,
+        options
+      );
+      res.send(result);
+    });
 
     // to accept product
-    app.patch("/accepted/:id", async(req, res) => {
+    app.patch("/accepted/:id", async (req, res) => {
       const id = req.params.id;
-      const query ={_id: new ObjectId(id)};
-      const options = {upsert: true};
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
       const acceptProduct = {
-        $set:{
-          status: "accepted"
-        }
-      }
-      const result = await productCollection.updateOne(query, acceptProduct, options);
+        $set: {
+          status: "accepted",
+        },
+      };
+      const result = await productCollection.updateOne(
+        query,
+        acceptProduct,
+        options
+      );
       res.send(result);
-    })
-
+    });
 
     // to reject product
-    app.patch("/rejected/:id", async(req, res) => {
+    app.patch("/rejected/:id", async (req, res) => {
       const id = req.params.id;
-      const query ={_id: new ObjectId(id)};
-      const options = {upsert: true};
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
       const rejectProduct = {
-        $set:{
-          status: "rejected"
-        }
-      }
-      const result = await productCollection.updateOne(query, rejectProduct, options);
+        $set: {
+          status: "rejected",
+        },
+      };
+      const result = await productCollection.updateOne(
+        query,
+        rejectProduct,
+        options
+      );
       res.send(result);
-    })
+    });
 
     // to update product vote
     app.patch("/product/:id", async (req, res) => {
@@ -248,10 +303,10 @@ async function run() {
       res.send(result);
     });
 
-    // to delete a product 
+    // to delete a product
     app.delete("/deleteProduct/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await productCollection.deleteOne(query);
       res.send(result);
     });
@@ -270,6 +325,49 @@ async function run() {
     app.post("/review", async (req, res) => {
       const query = req.body;
       const result = await reviewCollection.insertOne(query);
+      res.send(result);
+    });
+
+    // Coupon related API
+    // ========================
+
+    // To get coupons
+    app.get("/coupons", async (req, res) => {
+      const result = await couponCollection.find().toArray();
+      res.send(result);
+    });
+
+    // to post coupon
+    app.post("/coupon", async (req, res) => {
+      const coupon = req.body;
+      const result = await couponCollection.insertOne(coupon);
+      res.send(result);
+    });
+
+    // to update coupon
+    app.put("/coupon/:id", async(req, res) => {
+      const id = req.params.id;
+      const coupon = req.body;
+      const query = {_id: new ObjectId(id)}
+
+      const updatedCoupon = {
+        $set:{
+          couponCode: coupon.couponCode,
+          expiryDate: coupon.expiryDate,
+          discountAmount: coupon.discountAmount,
+          description: coupon.description
+        }
+      }
+      const result = await couponCollection.updateOne(query, updatedCoupon);
+      res.send(result);
+      
+    });
+
+    // to delete coupons
+    app.delete("/coupon/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await couponCollection.deleteOne(query);
       res.send(result);
     });
 
