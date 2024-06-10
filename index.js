@@ -97,6 +97,15 @@ async function run() {
       res.send(result);
     });
 
+    // To Load reported Products
+      app.get("/reported", async (req, res) => {
+        const isReported = true;
+        const query = { reported: isReported };
+        const result = await productCollection
+          .find(query).toArray();
+        res.send(result);
+      });
+
     // to get trending product
     app.get("/trending", async (req, res) => {
       const result = await productCollection
@@ -165,6 +174,20 @@ async function run() {
       const result = await productCollection.updateOne(query, makeFeatured, options);
       res.send(result);
     })
+
+// to report Product
+        app.patch("/report/:id", async(req, res) => {
+          const id = req.params.id;
+          const query ={_id: new ObjectId(id)};
+          const options = {upsert: true};
+          const makeReported = {
+            $set:{
+              reported: true
+            }
+          }
+          const result = await productCollection.updateOne(query, makeReported, options);
+          res.send(result);
+        })
 
     // to accept product
     app.patch("/accepted/:id", async(req, res) => {
