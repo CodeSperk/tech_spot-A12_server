@@ -312,8 +312,14 @@ async function run() {
     });
 
     // Review related API
-    // ===========================================
-    // to get productwise review
+    //===========================================
+    // to get product wise review
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result)
+    })
+
+
     app.get("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const query = { productId: id };
