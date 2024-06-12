@@ -136,10 +136,14 @@ async function run() {
       res.send(result);
     });
 
-    // to get all accepted products
+    // to get all accepted products with search functionality
     app.get("/products", async (req, res) => {
       const status = "accepted";
-      const query = { status: status };
+      const searchQuery = req.query.q || "";
+      const query = {
+        status: status,
+        tags: { $regex: searchQuery, $options: "i" }
+      };
       const result = await productCollection.find(query).toArray();
       res.send(result);
     });
