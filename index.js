@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 //middleware
@@ -110,6 +111,22 @@ async function run() {
       res.send(result);
     });
 
+    // to update subscription status
+    app.patch("/membership", async (req, res) => {
+      const subscriptionInfo = req.body;
+      const query =  {email: subscriptionInfo.email};
+      const options = {upsert: true};
+      const updatableInfo = {
+        $set:{
+          subscriptionStatus: "varified",
+          subscriptionAmount: subscriptionInfo.price,
+          transectionId: subscriptionInfo.transectionId
+        }
+      }
+      const result = await usersCollection.updateOne(query, updatableInfo, options);
+      res.send(result);
+    })
+
     // Products related API
     // ===========================================
 
@@ -179,6 +196,19 @@ async function run() {
     // to add single product
     app.post("/addProduct", async (req, res) => {
       const product = req.body;
+      const userEmail = product.ownerEmail;
+      const user = await usersCollection.findOne({email: userEmail});
+
+
+      // to check and limit unSubscribed users
+      if(user?.subscriptionStatus !== "varified"){
+        const userProductCount = await productCollection.countDocuments({ownerEmail: userEmail});
+        
+        if(userProductCount >= 1){
+          return res.status(403).send({message: "Unsubscribed User"})
+        }
+      }
+
       const result = await productCollection.insertOne(product);
       res.send(result);
     });
@@ -376,6 +406,25 @@ async function run() {
       const result = await couponCollection.deleteOne(query);
       res.send(result);
     });
+
+    // Payment Intent
+    app.post('/create-payment-intent', async (req, res) => {
+      const {price} = req.body;
+      const amount = parseInt(price * 100);
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+
+
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
