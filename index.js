@@ -35,7 +35,6 @@ async function run() {
 
     // Users related API
     //=======================
-    // to get all users
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
